@@ -1,0 +1,418 @@
+payeeAdd
+
+=========================================================================================
+import React, { Component } from "react";
+import { Typography, Form, Button, Row, Col, Select,Spin,Alert,message  } from "antd";
+import PayeeCryptoLeft from "./leftPannel";
+import Breadcrumb from "../../../layout/Breadcrumb"
+import { getCryptoCoinLu, saveCryptoData, getCryptoData } from "../api";
+import { connect } from "react-redux";
+
+const { Title } = Typography
+const { Option } = Select;
+class PayeesAddCrypto extends Component {
+    form = React.createRef();
+    useDivRef = React.createRef()
+    constructor(props) {
+        super(props);
+        this.state = {
+            message: false,
+            coinsList: [],
+            networksList: [],
+            cryptoData: {},
+            isLoading: false,
+            btnLoader: false,
+            message: null,
+            breadCrumbList: [{ id: '1', bname: 'Banking' }, { id: '2', bname: 'Payees' }]
+        }
+    }
+    componentDidMount() {
+        this.getCryptoData();
+    }
+    getCryptoData = async () => {
+        let id = this.props?.match?.params?.id || "00000000-0000-0000-0000-000000000000";
+        this.setState({ ...this.state, isLoading: true })
+        let response = await getCryptoData(id);
+        if (response.ok) {
+            this.setState({ ...this.state, cryptoData: response.data, isLoading: false })
+        }
+        else {
+            this.setState({ ...this.state, isLoading: false, message: this.isErrorDispaly(response) })
+        }
+        this.form?.current?.setFieldsValue(response.data);
+        this.coinList();
+    }
+
+    isErrorDispaly = (objValue) => {
+        if (objValue.data && typeof objValue.data === "string") {
+            return objValue.data;
+        } else if (
+            objValue.originalError &&
+            typeof objValue.originalError.message === "string"
+        ) {
+            return objValue.originalError.message;
+        } else {
+            return "Something went wrong please try again!";
+        }
+    };
+    coinList = async () => {
+        let response = await getCryptoCoinLu("All")
+        if (response.ok) {
+            this.setState({ ...this.state, coinsList: response.data, isLoading: false })
+        } else {
+            this.setState({ ...this.state, coinsList: [], isLoading: false })
+        }
+        if (this.state.cryptoData.network) {
+            let val = this.state.cryptoData.token
+            this.handleTokenChange(val);
+            this.form?.current?.setFieldsValue({ network: this.state.cryptoData.network })
+        }
+    }
+
+    handleTokenChange = (value) => {
+        this.form?.current?.setFieldsValue({ network: null });
+        let networkLu = [];
+        if (value) {
+            this.state.coinsList?.filter(function (item) {
+                if (item.walletCode === value) {
+                    return networkLu = item?.network;
+                }
+                return false;
+            })
+        }
+        this.setState({ ...this.state, networksList: networkLu })
+    };
+    submit = async (values) => {
+
+        this.setState({ ...this.state, btnLoader: true,isLoading: true })
+        let saveObj = Object.assign({})
+        saveObj.adressstate = "fd"
+        saveObj.createddate = new Date()
+        saveObj.currencyType = "Crypto"
+        saveObj.customerId = this.props.userConfig.id
+        saveObj.documents = null
+        saveObj.id = this.props.match.params.id !== "00000000-0000-0000-0000-000000000000"
+            ? this.props.match.params.id
+            : "00000000-0000-0000-0000-000000000000"
+        saveObj.info = null
+        saveObj.modifiedBy = this.props.userConfig.userName
+        saveObj.modifiedDate = new Date()
+        saveObj.network = values.network
+        saveObj.saveWhiteListName = values.saveWhiteListName
+        saveObj.status = 1
+        saveObj.token = values.token
+        saveObj.userCreated = this.props.userConfig.userName
+        saveObj.walletAddress = values.walletAddress
+        let res = await saveCryptoData(saveObj);
+        this.setState({ ...this.state, btnLoader: true })
+        if (res.ok) {
+            this.setState({ ...this.state, btnLoader: false })
+            this.props?.history?.push(`/payees/crypto/${this.props?.match?.params?.id}`)
+        }
+        else {
+            this.setState({ ...this.state, btnLoader: false,message: this.isErrorDispaly(res) })
+        }
+
+    }
+
+    render() {
+        const { cryptoData, coinsList, networksList, breadCrumbList,isLoading,btnLoader, message} = this.state;
+        return (
+            <>
+                <Breadcrumb breadCrumbList={breadCrumbList} />
+                <Row gutter={[16, 16]} className="payees-panel row-stretch">
+                    <PayeeCryptoLeft />
+                    <div className="layout-bg right-panel pannel-bg ">
+                        <div ref={this.useDivRef}></div>
+                        {/* {errorMessage &&
+                        <div className="alert-flex">
+                         <Alert 
+                         type="error" 
+                         description={errorMessage}
+                          showIcon />
+                          </div>} */}
+                          {message !== null && (
+                        <div className="alert-flex">
+                            <Alert message="Error" type="error" showIcon />
+
+                            
+                        </div>
+                    )}
+                        <Form
+                            initialValues={cryptoData}
+                            className="custom-label  mb-0 fw-400"
+                            ref={this.form}
+                            onFinish={this.submit}
+                            scrollToFirstError
+                        >
+                            <Row gutter={16}>
+                                <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                    <Title level={6} className=" bal-title" style={{ marginTop: '36px', marginBottom: '36px' }}>Add Crypto Address</Title>
+                                </Col>
+                                
+                                <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                    <div className={` text-left payee-field p-relative`}>
+                                        <div className="payee-token p-absolute">
+                                            <div className="payee-coinselect" >
+                                                <div className="">
+                                                    <span className="buy-from payee-label">Save Whitelist Name As</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left">
+                                            <Form.Item
+                                                name="saveWhiteListName"
+                                                rules={[{ required: true, message: "Is required", }]}  >
+                                                <input className="buy-entryinput  payee-input input-bordered"
+                                                    placeholder="Save Whitelist Name As"
+                                                    type="input"
+                                                    maxLength={100}
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12}>
+                                    <div className={` text-left payee-field p-relative`}>
+                                        <div className="payee-token p-absolute ">
+                                            <div className="payee-coinselect" >
+                                                <div className=" mbl-ellipse">
+                                                    <span className="buy-from payee-label">Token</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left">
+                                            <Form.Item
+
+                                                name="token"
+                                                rules={[{ required: true, message: "Is required", }]}>
+
+                                                <Select
+                                                    onChange={(e) => this.handleTokenChange(e)}
+                                                    placeholder="Select Token"
+                                                    className="buy-entryinput  payee-input input-bordered"
+                                                    maxLength={30}
+                                                >
+                                                    {coinsList?.map((item, index) => {
+
+                                                        return <Option
+                                                            key={index}
+                                                            value={item.walletCode}
+                                                        >{item.walletCode}</Option>
+                                                    })
+                                                    }
+                                                </Select>
+                                            </Form.Item>
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col xs={24} sm={12} md={12} lg={24} xl={12} xxl={12}>
+                                    <div className={` text-left payee-field p-relative`}>
+                                        <div className="payee-token p-absolute ">
+                                            <div className="payee-coinselect" >
+                                                <div className=" mbl-ellipse">
+                                                    <span className="buy-from payee-label">Network</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left">
+                                            <Form.Item
+
+                                                name="network"
+                                                rules={[{ required: true, message: "Is required", }]}>
+
+                                                <Select className="buy-entryinput  payee-input input-bordered"
+                                                    placeholder="Select Network"
+                                                    type="input"
+                                                >
+                                                    {networksList?.map((item, idx) => {
+
+                                                        return <Option key={idx} value={item.name}>
+                                                            {item.name}
+                                                        </Option>
+                                                    })
+                                                    }
+
+                                                </Select>
+                                            </Form.Item>
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                    <div className={` text-left payee-field p-relative`}>
+                                        <div className="buy-token payee-token p-absolute">
+                                            <div className="buy-coinselect" >
+                                                <div className="">
+                                                    <span className="buy-from payee-label">Wallet Address</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left">
+                                            <Form.Item
+                                                name="walletAddress"
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        message: "Is required",
+                                                    },
+                                                ]}  >
+                                                <input className="buy-entryinput  payee-input input-bordered"
+                                                    placeholder="Wallet Address"
+                                                    type="input"
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                    </div>
+
+                                </Col>
+                            </Row>
+                            <Form.Item>
+                                <Button block className="btn-style" htmlType="submit" loading={btnLoader} style={{ marginTop: '36px' }}>SAVE<span class="icon lg right-arrow c-pointer" /></Button>
+                            </Form.Item>
+                           
+                        </Form>
+                    </div>
+                </Row>
+            </>
+        )
+    }
+}
+const connectStateToProps = ({ userConfig }) => {
+    return { userConfig: userConfig.userProfileInfo }
+}
+const connectDispatchToProps = dispatch => {
+    return {
+
+        dispatch
+    }
+}
+export default connect(connectStateToProps, connectDispatchToProps)(PayeesAddCrypto);
+
+
+=============================================================================================================================
+leftpannel
+------------------
+
+import React from "react";
+import { useEffect,useState } from "react";
+import { Typography, Input, Row,Divider,Skeleton, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import { connect } from "react-redux";
+import { gridPayCrypto } from "../api";
+import Loader from "../../../shared/loader";
+import { withRouter } from "react-router-dom";
+import InfiniteScroll from 'react-infinite-scroll-component';
+const { Title, Text } = Typography
+const { Search } = Input;
+
+const PayeeCryptoLeft = (props) => {
+ 
+  const [cryptoGridList, setCryptoGridList] = useState([])
+  const [searchData, setSearchDataFilter] = useState([])
+  const [loader, setLoader] = useState(false)
+  
+  useEffect(() => {
+    getCryptoGrid();
+  }, [])
+
+  const GotoView=(item)=>{    
+     props?.history?.push(`/payees/crypto/${item?.id}`)    
+    props?.loadData(item);
+  }
+  const getCryptoGrid = async () => {
+    setLoader(true)
+    const response = await gridPayCrypto();
+    if (response.ok) {
+      setSearchDataFilter(response.data.data);
+      setCryptoGridList(response.data.data);
+      setLoader(false)
+      props?.loadData(response.data.data[0]);
+    }
+    else { setLoader(false) }
+
+  }
+  
+  
+  const handleSearchCrypto = (e) => {
+    const searchList =e.target.value;
+    let cryptoList = cryptoGridList.filter((item) => {
+      return item?.whiteListName?.toLowerCase().indexOf(searchList?.toLowerCase()) > -1;
+    }
+    )
+    setSearchDataFilter(cryptoList);
+    
+  }
+
+  return (
+    <>
+      <Row gutter={[16, 16]} className="payees-panel row-stretch">
+        <div className="layout-bg left-panel pannel-bg left-items-stretch">
+          <div className="custom-flex">
+            <Title level={6} className=" card-title card-head">Payee</Title>
+            <Link to="/payee/crypto/Addpayees/00000000-0000-0000-0000-000000000000"><Tooltip placement="top" title="Add Payee"> <span className="icon sm add-coin c-pointer" /></Tooltip></Link>       
+          </div>
+          <div className="coin-search dt-topspace grid-search grid-transaction">
+            <Search
+              placeholder='Type to search for something..'
+              suffix={<span className="icon md search c-pointer" />}
+              onKeyUp={((e)=>handleSearchCrypto(e))}
+              showSearch
+              size="middle" bordered={false}
+              className="coin-search-input  "
+              />
+          </div>
+         
+          <div
+      id="scrollableDiv"
+      style={{
+        height: 850,
+        overflow: 'auto',
+        padding: '0 16px',
+        border: '1px solid rgba(140, 140, 140, 0.35)',
+      }}
+    >
+      <InfiniteScroll
+        dataLength={cryptoGridList.length}
+        next={getCryptoGrid}
+        hasMore={cryptoGridList.length < 15}
+        loader={
+          <Skeleton
+            avatar
+            paragraph={{
+              rows: 1,
+            }}
+            active
+          />
+        }
+        endMessage={<Divider plain >
+          <div className="buy-selectgroup">
+            <span >It is all, nothing more 🤐</span>
+                                           
+            </div></Divider>}
+         scrollableTarget="scrollableDiv"
+      >
+         {loader && <Loader/>}
+       <div>
+            {searchData.map((item, index) => {
+              return <h2 key={index}>
+              <div className="payee-leftdata" onClick={()=>GotoView(item)}><div>
+                <Text className="coin-title c-pointer" >WhiteListName</Text>
+                  <div className="coin-price text-left">{item?.whiteListName}</div></div>
+                  <div><Text className="coin-title">Currency</Text><div className="coin-price text-left">{item?.coin}</div></div>
+                  <div><Text className="coin-val">Status</Text><div className="coin-price td-success">{item?.addressState}</div></div>
+                </div>
+              </h2>
+
+            })}
+          </div>
+          </InfiniteScroll>
+          </div>
+        </div>
+      </Row>
+    </>
+  )
+}
+const connectStateToProps = ({ userConfig }) => {
+  return { userConfig: userConfig.userProfileInfo }
+}
+export default connect(connectStateToProps)(withRouter(PayeeCryptoLeft));

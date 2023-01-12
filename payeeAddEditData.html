@@ -1,0 +1,626 @@
+
+
+=================================================================================
+
+payeeAdd And Edit
+===================
+import React, { useEffect, useState } from "react";
+import { Typography, Form, Button, Row, Col,Select,Alert } from "antd";
+import PayeeCryptoLeft from "./leftPannel";
+import Breadcrumb from "../../../layout/Breadcrumb"
+import { getCryptoCoinLu, saveCryptoData, getCryptoData } from "../api";
+import Loader from "../../../shared/loader";
+import { connect } from "react-redux";
+// import WAValidator from "multicoin-address-validator";
+
+
+
+const { Title, Text } = Typography
+
+const { Option } = Select;
+
+
+const breadCrumbList = [
+    { id: '1', bname: 'Banking' },
+    { id: '2', bname: 'Payees' }
+];
+
+const PayeesAddCrypto = (props) => {
+
+    const [form] = Form.useForm();
+    const [coinsList, setCoinsList] = useState([])
+    const [ networksList, setNetworksList] = useState([]);
+    const [cryptoData,setCryptoData]=useState({})
+    const [loader, setLoader] = useState(false)
+    const[btnLoader,setBtnLoader]=useState(false)
+    const [message, setMessage] = useState(null)
+    useEffect(() => {
+        //getCryptoCoinLuList();
+        
+            getLoadData();
+   
+       
+
+    }, [])
+    // const getCryptoCoinLuList = async () => {
+    //    // debugger
+    //     const response = await getCryptoCoinLu();
+    //     if (response.ok) {
+    //         setCryptoCoin(response.data)
+    //     } else {
+    //                     setCryptoCoin([])
+    //              }
+            
+    //     }
+    // }
+
+   const getCryptoCoinLuList = async () => {
+     debugger
+        let response = await getCryptoCoinLu("All")
+        if (response.ok) {
+            setCoinsList(response.data)
+        }
+        else{
+            coinsList([])
+        }
+        if(response.data){
+             let  cryptoCoin=response.data
+            handleTokenChange(cryptoCoin);
+            //setNetworksList(response.data) 
+            // coinsList(cryptoCoin)
+            form?.current?.setFieldsValue(response.data)
+           }
+          else if(response.data?.token){
+            form?.current?.setFieldsValue({token:response.data?.token})
+            // let val=response.data?.token
+            handleTokenChange(response.data?.token);
+          }
+        
+     }
+    const getLoadData = async () => {
+       
+        setLoader(true)
+        const response = await getCryptoData(props?.match?.params?.id);
+        if (response.ok){
+            setLoader(false)
+            setCryptoData(response.data);
+            setLoader(false);
+            form.setFieldsValue({...response.data} )
+        }
+        else {
+            setLoader(false)
+        }
+         getCryptoCoinLuList();
+         
+    }
+    const isErrorDispaly = (objValue) => {
+        if (objValue.data && typeof objValue.data === "string") {
+            return objValue.data;
+        } else if (
+            objValue.originalError &&
+            typeof objValue.originalError.message === "string"
+        ) {
+            return objValue.originalError.message;
+        } else {
+            return "Something went wrong please try again!";
+        }
+    };
+   
+    const handleTokenChange = (e) => {
+        debugger
+   form?.current?.setFieldsValue({network:null});
+        for(let k in  coinsList){
+            
+            if(coinsList[k].walletCode==e){
+            setNetworksList(coinsList[k].network)
+           
+        }
+         
+      }
+    }
+//    const  handleTokenChange = (value) => {
+//         debugger
+//         form?.current?.setFieldsValue({network:null});
+//         let walletAddress =  form?.current?.getFieldValue("walletAddress");
+//         if(value && walletAddress) {
+//        form?.current?.validateFields(["walletAddress"], validateAddressType(value))
+//         }
+//         let networkLu = [];
+//         if(value) {
+//             cryptoCoin?.filter(function (item){
+//             if(item.walletCode === value) {
+//             return networkLu = item?.network;
+//             }
+//             return false;
+//           })
+//         }
+//         setSelected(networkLu)
+//       };
+    // const validateAddressType = (_, value) => {
+    //     debugger
+    //     if (value) {
+    //       let address = value.trim();
+    //       let coinType = form.getFieldValue("token")
+    //       if (coinType) {
+    //         const validAddress = (address, coinType, "both");
+    //           if (!validAddress && coinType !== "USDT") {
+    //             return Promise.reject(
+    //               "Address is not valid, Please enter a valid address according to the token selected"
+    //             );
+    //           } else {
+    //             return Promise.resolve();
+    //           }
+    //       } else {
+    //         return Promise.reject("Please select a token first");
+    //       }
+    //     } else {
+    //       return Promise.reject('Is required');
+    //     }
+    //   };
+
+    const getSaveData = async (values) => {
+        setBtnLoader(true)
+        let saveObj = Object.assign({})
+        saveObj.adressstate ="fd" 
+        saveObj.createddate = new Date()
+        saveObj.currencyType = "Crypto"
+        saveObj.customerId = props.userConfig.id
+        saveObj.documents = null
+        saveObj.id = props.match.params.id !== "00000000-0000-0000-0000-000000000000"
+        ? props.match.params.id
+        : "00000000-0000-0000-0000-000000000000"
+        saveObj.info = null
+        saveObj.modifiedBy =props.userConfig.userName
+        saveObj.modifiedDate = new Date()
+        saveObj.network = values.network
+        saveObj.saveWhiteListName =values.saveWhiteListName
+        saveObj.status = 1
+        saveObj.token = values.token
+        saveObj.userCreated =props.userConfig.userName
+        saveObj.walletAddress =values.walletAddress
+
+        let res = await saveCryptoData(saveObj);
+
+        setBtnLoader(true)
+        if (res.ok) {
+            setBtnLoader(false)
+            console.log("sussessful")    
+            props?.history?.push(`/payees/crypto/${props?.match?.params?.id}`)
+        }
+        else{
+            setBtnLoader(false)
+            setMessage(isErrorDispaly(res))
+        }
+
+    }
+    return (
+        <>
+            <Breadcrumb breadCrumbList={breadCrumbList} />
+            <Row gutter={[16, 16]} className="payees-panel row-stretch">
+                <PayeeCryptoLeft  />
+                <div className="layout-bg right-panel pannel-bg ">
+               
+                {loader && <Loader/>}
+                    <Form  initialValues={cryptoData}
+                     onFinish={getSaveData} className="payees-form" form={form}  >
+                        <Row gutter={16}>
+                        {message !== null && (
+                        <div className="alert-flex">
+                            <Alert
+                                type="error"
+                                description={message}
+                                onClose={() => setMessage(null)}
+                                showIcon
+
+                            />
+                        </div>
+                    )}
+
+                            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                <Title level={6} className=" bal-title" style={{ marginTop: '36px', marginBottom: '36px' }}>Add Crypto Address</Title>
+                            </Col>
+                     
+                            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                <div className={` text-left payee-field p-relative`}>
+                                    <div className="payee-token p-absolute">
+                                        <div className="payee-coinselect" >
+                                            <div className="">
+                                                <span className="buy-from payee-label">Save Whitelist Name As</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-left">
+                                        <Form.Item
+                                            name="saveWhiteListName"
+                                            rules={[{ required: true, message: "Is required",}]}  >
+                                            <input className="buy-entryinput  payee-input input-bordered"
+                                                placeholder="Save Whitelist Name As"
+                                                type="input"
+                                                maxLength={100}
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </Col>
+                          
+                            <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12}>
+                                <div className={` text-left payee-field p-relative`}>
+                                    <div className="payee-token p-absolute ">
+                                        <div className="payee-coinselect" >
+                                            <div className=" mbl-ellipse">
+                                                <span className="buy-from payee-label">Token</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-left">
+                                        <Form.Item
+
+                                            name="token"
+                                            rules={[{ required: true ,message: "Is required",}]}>
+
+                                            <Select
+                                             onChange={(e)=>handleTokenChange(e)}
+                                                placeholder="Select Token"
+                                                className="buy-entryinput  payee-input input-bordered"
+                                                maxLength={30}
+                                            >
+                                                {coinsList?.map((item,index) => { 
+                                                    
+                                                    return <Option 
+                                                     key={index}  
+                                                     value={item.walletCode}
+                                                    >{item.walletCode}</Option>          
+                                                })
+                                                }
+                                            </Select>
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col xs={24} sm={12} md={12} lg={24} xl={12} xxl={12}>
+                                <div className={` text-left payee-field p-relative`}>
+                                    <div className="payee-token p-absolute ">
+                                        <div className="payee-coinselect" >
+                                            <div className=" mbl-ellipse">
+                                                <span className="buy-from payee-label">Network</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-left">
+                                    <Form.Item
+
+                                     name="network"
+                                    rules={[{ required: true,message: "Is required",  }]}>
+
+                                        <Select className="buy-entryinput  payee-input input-bordered"
+                                            placeholder="Select Network"
+                                            type="input"   
+                                        >
+                                            {networksList?.map((item,idx) => { 
+                                                    
+                                                  return  <Option key={idx} value={item.name}>
+                                                    {item.name}
+                                                  </Option>          
+                                                })
+                                                }
+
+                                        </Select>
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+                                <div className={` text-left payee-field p-relative`}>
+                                    <div className="buy-token payee-token p-absolute">
+                                        <div className="buy-coinselect" >
+                                            <div className="">
+                                                <span className="buy-from payee-label">Wallet Address</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-left">
+                                        <Form.Item
+                                            name="walletAddress"
+                                            rules={[
+                                                { required: true,
+                                                message: "Is required", 
+                                               },
+                                            //    {
+                                            //     validator:validateAddressType
+                                            //   }
+                                            ]}  >
+                                            <input className="buy-entryinput  payee-input input-bordered"
+                                                placeholder="Wallet Address"
+                                                type="input"
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+
+                            </Col>
+                        </Row>
+
+                        <Button block className="btn-style" htmlType="submit"  loading={btnLoader} style={{ marginTop: '36px' }}>SAVE<span class="icon lg right-arrow c-pointer" /></Button>
+                    </Form>
+                </div>
+            </Row>
+        </>
+    )
+
+}
+const connectStateToProps = ({ userConfig }) => {
+    return { userConfig: userConfig.userProfileInfo }
+  }
+export default connect(connectStateToProps)(PayeesAddCrypto);
+
+==================================================================
+payeeView
+=========================================================
+
+import { useState, useEffect } from "react";
+import { Typography, Form, Row, Tooltip, Spin, Alert } from "antd";
+import { getCryptoViewData } from "../api";
+import PayeeCryptoLeft from '../payeeCrypto.component/leftPannel'
+import CoinStatsComponent from "../../shared.component/coinStats";
+
+
+const { Title } = Typography
+
+
+const PayeeViewComponent = (props) => {
+  
+    
+    const [selectData, setSelectData] = useState([])
+    const [cryptoView, setCryptoView] = useState([])
+    const [loader, setLoader] = useState(false)
+    const [message, setMessage] = useState(null)
+
+    
+
+    useEffect(() => {
+       if(props?.match?.params?.id){
+        getCryptoData();
+       }
+           
+    }, [selectData])
+
+    const getCryptoData = async () => {
+        setLoader(true)
+        const response = await getCryptoViewData(props?.match?.params?.id);
+        if (response.ok) {
+            setLoader(false);
+            setCryptoView(response.data)
+
+        }
+        else {
+            setLoader(false)
+            setMessage(isErrorDispaly(response))
+        }
+    }
+    const isErrorDispaly = (objValue) => {
+        if (objValue.data && typeof objValue.data === "string") {
+            return objValue.data;
+        } else if (
+            objValue.originalError &&
+            typeof objValue.originalError.message === "string"
+        ) {
+            return objValue.originalError.message;
+        } else {
+            return "Something went wrong please try again!";
+        }
+    };
+
+    const goToPayeeView = (data) => {
+        props?.history?.push(`/payees/crypto/${data.id}`)
+        setSelectData(data);
+    }
+
+    const CryptoEditPage = () => {
+        props?.history?.push(`/payee/crypto/Addpayees/${props?.match?.params?.id}`)
+
+    }
+    return (
+        <>
+
+            <Row gutter={[16, 16]} className="payees-panel row-stretch">
+                <PayeeCryptoLeft loadData={(data)=>goToPayeeView(data)} />
+                <div className="layout-bg right-panel pannel-bg ">
+                
+                    {message !== null && (
+                        <div className="alert-flex">
+                            <Alert
+                                type="error"
+                                description={message}
+                                onClose={() => setMessage(null)}
+                                showIcon
+
+                            />
+                        </div>
+                    )}
+                    <div className="coins-header">
+                            <CoinStatsComponent
+                                coinStatsObj={{
+                                    coinCode: props?.selectCoin?.coin,
+                                   
+                                }}
+                            />
+                        </div>
+                    
+                    <Spin spinning={loader}>
+                        <div className="panel-card buy-card">
+                            <div className="text-right"><div><Tooltip placement="top" title="Edit">
+                                <span className="icon md edit c-pointer" onClick={() => CryptoEditPage()}></span></Tooltip></div>
+                            </div>
+
+                            <Form className="payees-form payees-rightpanel">
+
+
+                                <div className={`payee-summary-bank`}>
+                                    <Title level={6} className=" bal-title" style={{ marginTop: '36px', }}>Recipient's Details</Title>
+                                    <div className="summary-list-item">
+                                        <div className="summary-label">Whitelist Name</div>
+                                        <div className="summary-text">{cryptoView?.saveWhiteListName}</div>
+                                    </div>
+                                    <div className="summary-list-item">
+                                        <div className="summary-label">Token</div>
+                                        <div className="summary-text">{cryptoView?.token}</div>
+                                    </div>
+                                    <div className="summary-list-item">
+                                        <div className="summary-label">Network</div>
+                                        <div className="summary-text">{cryptoView?.network}</div>
+                                    </div>
+                                    <div className="summary-list-item">
+                                        <div className="summary-label">Wallet Address</div>
+                                        <div className="summary-text">{cryptoView?.walletAddress}</div>
+                                    </div>
+                                    <div className="summary-list-item">
+                                        <div className="summary-label">Address State</div>
+                                        <div className="summary-text">{cryptoView?.adressstate}</div>
+                                    </div></div>
+
+                            </Form>
+                        </div>
+                    </Spin>
+                </div>
+
+            </Row>
+
+        </>
+    )
+}
+
+
+export default PayeeViewComponent;
+
+
+====================================================================
+left pannel
+================================
+
+import React from "react";
+import { useEffect,useState } from "react";
+import { Typography, Input, Row,Divider,Skeleton, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import { connect } from "react-redux";
+import { gridPayCrypto } from "../api";
+import Loader from "../../../shared/loader";
+import { withRouter } from "react-router-dom";
+import InfiniteScroll from 'react-infinite-scroll-component';
+const { Title, Text } = Typography
+const { Search } = Input;
+
+const PayeeCryptoLeft = (props) => {
+ 
+  const [cryptoGridList, setCryptoGridList] = useState([])
+  const [searchData, setSearchDataFilter] = useState([])
+  const [loader, setLoader] = useState(false)
+  
+  useEffect(() => {
+    getCryptoGrid();
+  }, [])
+
+  const GotoView=(item)=>{    
+     props?.history?.push(`/payees/crypto/${item?.id}`)    
+    props?.loadData(item);
+  }
+  const getCryptoGrid = async () => {
+    setLoader(true)
+    const response = await gridPayCrypto();
+    if (response.ok) {
+      setSearchDataFilter(response.data.data);
+      setCryptoGridList(response.data.data);
+      setLoader(false)
+      props?.loadData(response.data.data[0]);
+    }
+    else { setLoader(false) }
+
+  }
+  
+  
+  const handleSearchCrypto = (e) => {
+    const searchList =e.target.value;
+    let cryptoList = cryptoGridList.filter((item) => {
+      return item?.whiteListName?.toLowerCase().indexOf(searchList?.toLowerCase()) > -1;
+    }
+    )
+    setSearchDataFilter(cryptoList);
+    
+  }
+
+  return (
+    <>
+      <Row gutter={[16, 16]} className="payees-panel row-stretch">
+        <div className="layout-bg left-panel pannel-bg left-items-stretch">
+          <div className="custom-flex">
+            <Title level={6} className=" card-title card-head">Payee</Title>
+            <Link to="/payee/crypto/Addpayees/00000000-0000-0000-0000-000000000000"><Tooltip placement="top" title="Add Payee"> <span className="icon sm add-coin c-pointer" /></Tooltip></Link>       
+          </div>
+          <div className="coin-search dt-topspace grid-search grid-transaction">
+            <Search
+              placeholder='Type to search for something..'
+              suffix={<span className="icon md search c-pointer" />}
+              onKeyUp={((e)=>handleSearchCrypto(e))}
+              showSearch
+              size="middle" bordered={false}
+              className="coin-search-input  "
+              />
+          </div>
+          {loader && <Loader/>}
+          <div
+      id="scrollableDiv"
+      style={{
+        height: 850,
+        overflow: 'auto',
+        padding: '0 16px',
+        border: '1px solid rgba(140, 140, 140, 0.35)',
+      }}
+    >
+      <InfiniteScroll
+        dataLength={cryptoGridList.length}
+        next={getCryptoGrid}
+        hasMore={cryptoGridList.length < 15}
+        loader={
+          <Skeleton
+            avatar
+            paragraph={{
+              rows: 1,
+            }}
+            active
+          />
+        }
+        endMessage={<Divider plain >
+          <div className="buy-selectgroup">
+            <span >It is all, nothing more 🤐</span>
+                                           
+            </div></Divider>}
+         scrollableTarget="scrollableDiv"
+      >
+       <div>
+            {searchData.map((item, index) => {
+              return <h2 key={index}>
+              <div className="payee-leftdata" onClick={()=>GotoView(item)}><div>
+                <Text className="coin-title c-pointer" >WhiteListName</Text>
+                  <div className="coin-price text-left">{item?.whiteListName}</div></div>
+                  <div><Text className="coin-title">Currency</Text><div className="coin-price text-left">{item?.coin}</div></div>
+                  <div><Text className="coin-val">Status</Text><div className="coin-price td-success">{item?.addressState}</div></div>
+                </div>
+              </h2>
+
+            })}
+          </div>
+          </InfiniteScroll>
+          </div>
+        </div>
+      </Row>
+    </>
+  )
+}
+const connectStateToProps = ({ userConfig }) => {
+  return { userConfig: userConfig.userProfileInfo }
+}
+export default connect(connectStateToProps)(withRouter(PayeeCryptoLeft));
+
+26-12-2022
+---------------
+220874-2hr-done
+221473-6hrs-done
