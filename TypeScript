@@ -1,0 +1,38 @@
+import React, { useState } from 'react';
+import logo from './logo.svg';
+import './App.css';
+import List from './list';
+import AddList from './AddToList';
+
+
+interface IState{
+  people:{
+
+    name:string,
+    age:number,
+    url:string,
+    note?:string
+
+  }[]
+}
+
+function App() {
+
+  const[people,setPeople]=useState<IState["people"]>([
+    {
+      name:"Virat Kohli",
+      url:"https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.forbes.com%2Fprofile%2Fvirat-kohli%2F&psig=AOvVaw0uCbLCJYte9vT8btKem17k&ust=1673605933389000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCJjfm4vqwfwCFQAAAAAdAAAAABAE",
+      age:36
+    }
+  ])
+
+  return (
+    <div className="App">
+      <h1>HelloWorld</h1>
+      <List people={people}/>
+      <AddList/>    
+    </div>
+  );
+}
+
+export default App;
