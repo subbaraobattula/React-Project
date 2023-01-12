@@ -1,0 +1,152 @@
+<html>
+
+<head>
+    <title>
+        JavaScript CRUD Example Tutorial
+    </title>
+    <style>
+        .employee-form {
+            border-style: solid; padding: 10px;
+        
+        margin: auto;
+        width: 50%;
+
+
+
+        }
+
+        .employees-table {
+            border-style: solid;
+
+            padding: 20px;
+
+            margin: auto;
+            width: 70%;
+
+        }
+
+        body>table {
+            width: 80%;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table.list {
+            width: 100%;
+        }
+
+        td,
+        th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even),
+        table.list thead>tr {
+            background-color: #dddddd;
+        }
+
+        input[type=text],
+        input[type=number] {
+            width: 100%;
+            padding: 8px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type=submit] {
+            width: 30%;
+            background-color: black;
+            color: white;
+            padding: 10px 18px;
+
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        form div.form-action-buttons {
+            text-align: right;
+        }
+
+        a {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #0000ee;
+            margin-right: 4px;
+        }
+
+        label.validation-error {
+            color: red;
+            margin-left: 5px;
+        }
+
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>
+        <center>JavaScript CRUD </center>
+    </h1>
+    <hr>
+    <div class="employee-form">
+        <form onsubmit="event.preventDefault();onFormSubmit();" autocomplete="off">
+            <div>
+                <label>id*</label><label class="validation-error hide" id="fullNameValidationError">This field is
+                    required.</label>
+                <input type="text" name="fullName" id="fullName">
+            </div>
+            <div>
+                <label>name</label>
+                <input type="text" name="name" id="name">
+            </div>
+            <div>
+                <label>gender</label>
+                <input type="text" name="gender" id="gender">
+            </div>
+            <div>
+                <label>phoneno</label>
+                <input type="text" name="number" id="number">
+            </div>
+            <div>
+                <label>password</label>
+                <input type="text" name="password" id="pwd">
+            </div>
+            
+            <div class="form-action-buttons">
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+    <br />
+    <div class="student-table">
+        <table class="list" id="studentList">
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>name</th>
+                    <th>gender</th>
+                    <th>phoneno</th>
+                    <th>password</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+    <script src="./crud.js"></script>
+</body>
+
+
