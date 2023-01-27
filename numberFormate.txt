@@ -1,0 +1,11 @@
+millians =121.M
+----------------
+{Number.isInteger(item.value)
+                        ? `${item.value}+`
+                        : `$${item.value}${Math.abs(item.value) > 999999 ? 'M' : ''}`}
+                    </h3>
+---------------------------------------------
+{item.projectstatus === 'upcoming' && 'up coming'} gap of api
+
+----------------------------------
+{stakingDetails.staked?.toLocaleString() == ' ' || null ?  '0.0000' : stakingDetails.staked?.toLocaleString()}
